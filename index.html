@@ -13,6 +13,7 @@
             --accent-color: #3b82f6;
             --success-color: #10b981;
             --warning-color: #f59e0b;
+            --danger-color: #ef4444;
             --border-color: #24324f;
             --sidebar-bg: #0f172a;
         }
@@ -28,7 +29,7 @@
         .nav-item.active { border-left: 4px solid var(--accent-color); }
 
         /* Main Content Container */
-        .main-content { flex: 1; padding: 40px; overflow-y: auto; }
+        .main-content { flex: 1; padding: 40px; overflow-y: auto; position: relative; }
         .page-header { margin-bottom: 30px; }
         .page-title { font-size: 24px; color: #fff; margin-bottom: 5px; }
         .page-subtitle { color: #64748b; font-size: 14px; }
@@ -42,6 +43,12 @@
         /* Windows/Tabs Management */
         .tab-window { display: none; }
         .tab-window.active { display: block; animation: fadeIn 0.3s ease; }
+
+        /* Loading & Error Overlays */
+        .status-overlay { background: rgba(11, 15, 25, 0.9); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 30px; border-radius: 14px; border: 1px solid var(--border-color); text-align: center; margin-top: 20px; }
+        .spinner { width: 40px; height: 40px; border: 4px solid rgba(255,255,255,0.1); border-top-color: var(--accent-color); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 15px; }
+        .status-text { font-size: 16px; color: #fff; margin-bottom: 5px; }
+        .status-sub { font-size: 13px; color: #64748b; margin-bottom: 15px; }
 
         /* Utility Elements */
         .search-container { margin-bottom: 20px; display: flex; gap: 10px; }
@@ -61,10 +68,13 @@
         @media (max-width: 600px) { .form-grid { grid-template-columns: 1fr; } }
         .form-group label { display: block; font-size: 12px; color: #94a3b8; margin-bottom: 8px; }
         .form-group input, .form-group select { width: 100%; padding: 10px 14px; background: #0f172a; color: #fff; border: 1px solid var(--border-color); border-radius: 8px; }
-        .btn { background: var(--accent-color); color: #fff; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-weight: 600; }
+        .btn { background: var(--accent-color); color: #fff; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; }
         .btn:hover { opacity: 0.9; }
+        .btn-sm { padding: 8px 16px; font-size: 13px; }
+        .btn-danger { background: var(--danger-color); }
 
         @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
@@ -72,22 +82,29 @@
     <nav class="sidebar">
         <div class="logo-area">🏢 TDL Asset Core</div>
         <ul class="nav-menu">
-            <li class="nav-item active" onclick="switchTab('dashboard')">📊 Dashboard ภาพรวม</li>
-            <li class="nav-item" onclick="switchTab('registry')">📋 ทะเบียนทรัพย์สิน</li>
-            <li class="nav-item" onclick="switchTab('add-asset')">➕ ลงทะเบียนใหม่</li>
-            <li class="nav-item" onclick="switchTab('depreciation')">📉 บัญชีค่าเสื่อมราคา</li>
+            <li class="nav-item active" id="menu-dashboard" onclick="switchTab('dashboard')">📊 Dashboard ภาพรวม</li>
+            <li class="nav-item" id="menu-registry" onclick="switchTab('registry')">📋 ทะเบียนทรัพย์สิน</li>
+            <li class="nav-item" id="menu-add-asset" onclick="switchTab('add-asset')">➕ ลงทะเบียนใหม่</li>
+            <li class="nav-item" id="menu-depreciation" onclick="switchTab('depreciation')">📉 บัญชีค่าเสื่อมราคา</li>
         </ul>
     </nav>
 
     <main class="main-content">
         
+        <div id="connection-status" class="status-overlay">
+            <div class="spinner"></div>
+            <div class="status-text" id="status-title">กำลังเชื่อมต่อฐานข้อมูลส่วนกลาง...</div>
+            <div class="status-sub" id="status-desc">เซิร์ฟเวอร์หลังบ้าน (Render) กำลังเริ่มทำงานหลังจากจำศีล อาจใช้เวลาประมาณ 30-50 วินาที</div>
+            <button class="btn btn-sm" id="retry-btn" style="display: none;" onclick="loadAssets()">🔄 ลองเชื่อมต่อใหม่อีกครั้ง</button>
+        </div>
+
         <div id="dashboard" class="tab-window active">
             <div class="page-header">
                 <h1 class="page-title">สรุปภาพรวมสินทรัพย์</h1>
                 <p class="page-subtitle">ข้อมูลการลงทุนและสถานะสินทรัพย์ถาวรของ TDL</p>
             </div>
             <div class="kpi-grid">
-                <div class="kpi-card"><span class="kpi-label">มูลค่าทุนรวม (Total Cost)</span><span class="kpi-value" id="kpi-total-cost">0.00</span></div>
+                <div class="kpi-card"><span class="kpi-label">มูลค่าทุนรวม (Total Cost)</span><span class="kpi-value" id="kpi-total-cost">0.00 LAK</span></div>
                 <div class="kpi-card"><span class="kpi-label">จำนวนรายการทั้งหมด</span><span class="kpi-value" id="kpi-total-count">0</span></div>
                 <div class="kpi-card"><span class="kpi-label">อุปกรณ์ไอที (ชิ้น)</span><span class="kpi-value" id="kpi-it-count">0</span></div>
                 <div class="kpi-card"><span class="kpi-label">เครื่องจักร & ยานพาหนะ</span><span class="kpi-value" id="kpi-machinery-count">0</span></div>
@@ -174,18 +191,64 @@
 
 <script>
     const API_URL = 'https://tdl-asset-backend.onrender.com/api/assets/'; 
-    let allAssetsData = []; // เก็บข้อมูลดิบไว้ทำซิงค์ค้นหาภาพรวม
+    let allAssetsData = []; 
 
-    // ฟังก์ชันสลับหน้าต่างแท็บเมนู
     function switchTab(tabId) {
         document.querySelectorAll('.tab-window').forEach(win => win.classList.remove('active'));
         document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
         
         document.getElementById(tabId).classList.add('active');
-        event.currentTarget.classList.add('active');
+        document.getElementById('menu-' + tabId).classList.add('active');
     }
 
-    // คำนวณตารางคุมค่าเสื่อมสะสม (Fixed Asset Logic)
+    // โหลดข้อมูลหลักเข้าสู่ระบบพร้อมสถานะความคืบหน้า
+    async function loadAssets() {
+        const overlay = document.getElementById('connection-status');
+        const spinner = overlay.querySelector('.spinner');
+        const retryBtn = document.getElementById('retry-btn');
+        const title = document.getElementById('status-title');
+        const desc = document.getElementById('status-desc');
+
+        // รีเซ็ตหน้าตาตอนโหลดให้พร้อมทำงาน
+        overlay.style.display = 'flex';
+        spinner.style.display = 'block';
+        retryBtn.style.display = 'none';
+        title.innerText = "กำลังดึงข้อมูลจากฐานข้อมูลส่วนกลาง...";
+        title.style.color = "#fff";
+        desc.innerText = "หากเซิร์ฟเวอร์หลังบ้าน (Render) กำลังเริ่มทำงานใหม่อาจใช้เวลาไม่เกิน 50 วินาที ระบบจะดึงอัตโนมัติครับ";
+
+        try {
+            // ตั้งค่าหน่วงเวลาตัดรอบ (Timeout 45 วินาทีเพื่อรอหลังบ้านตื่น)
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 45000);
+
+            const response = await fetch(API_URL, { 
+                method: 'GET', 
+                mode: 'cors',
+                signal: controller.signal 
+            });
+            
+            clearTimeout(timeoutId);
+            const assets = await response.json();
+            allAssetsData = Array.isArray(assets) ? assets : [];
+            
+            // ประมวลผลกระจายข้อมูลไปยังหน้าต่างต่าง ๆ
+            renderRegistryTable(allAssetsData);
+            updateDashboard(allAssetsData);
+            calculateDepreciation(allAssetsData);
+
+            // เมื่อโหลดผ่านสำเร็จให้ซ่อนกล่องข้อความทันที
+            overlay.style.display = 'none';
+        } catch (error) {
+            console.error('Error loading assets:', error);
+            spinner.style.display = 'none';
+            title.innerText = "🔌 การเชื่อมต่อหมดเวลา (Timeout) หรือล้มเหลว";
+            title.style.color = "var(--danger-color)";
+            desc.innerText = "เซิร์ฟเวอร์หลังบ้านยังไม่ตื่นเต็มที่ หรืออินเทอร์เน็ตขาดหายชั่วคราว โปรดรอสักครู่แล้วลองกดปุ่มด้านล่างเพื่อเชื่อมต่อใหม่อีกครั้ง";
+            retryBtn.style.display = 'inline-block';
+        }
+    }
+
     function calculateDepreciation(assets) {
         const depTbody = document.getElementById('depreciationTableBody');
         depTbody.innerHTML = '';
@@ -195,14 +258,9 @@
             const cost = parseFloat(asset.purchase_cost);
             const life = parseInt(asset.useful_life);
             const purchaseDate = new Date(asset.purchase_date);
-            
-            // คำนวณค่าเสื่อมต่อปี (ราคาทุน / อายุการใช้งาน)
             const depPerYear = cost / life;
             
-            // คำนวณระยะเวลาที่ถือครองมาจริงจนถึงปีปัจจุบัน
             const yearsInUse = Math.max(0, (today - purchaseDate) / (1000 * 60 * 60 * 24 * 365.25));
-            
-            // ค่าเสื่อมสะสมต้องไม่เกินราคาทุนสินทรัพย์
             const accumulatedDep = Math.min(cost, depPerYear * yearsInUse);
             const bookValue = cost - accumulatedDep;
 
@@ -219,7 +277,6 @@
         });
     }
 
-    // อัปเดตข้อมูลกล่องการ์ดสรุปบน Dashboard
     function updateDashboard(assets) {
         let totalCost = 0;
         let itCount = 0;
@@ -237,23 +294,6 @@
         document.getElementById('kpi-machinery-count').innerText = machineryCount;
     }
 
-    // โหลดข้อมูลเข้าสู่ระบบ
-    async function loadAssets() {
-        try {
-            const response = await fetch(API_URL, { method: 'GET', mode: 'cors' });
-            const assets = await response.json();
-            allAssetsData = Array.isArray(assets) ? assets : [];
-            
-            // สั่งอัปเดตกระจายไปยังหน้าต่างต่าง ๆ
-            renderRegistryTable(allAssetsData);
-            updateDashboard(allAssetsData);
-            calculateDepreciation(allAssetsData);
-        } catch (error) {
-            console.error('Error loading assets:', error);
-        }
-    }
-
-    // วาดตารางหน้าทะเบียน
     function renderRegistryTable(assets) {
         const tbody = document.getElementById('assetTableBody');
         tbody.innerHTML = '';
@@ -265,7 +305,7 @@
                 <td>📍 ${asset.location}</td>
                 <td>${new Date(asset.purchase_date).toLocaleDateString('th-TH')}</td>
                 <td class="num-col" style="color: var(--success-color); font-weight: 700;">
-                    ${parseFloat(asset.purchase_cost).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                    ${parseFloat(asset.purchase_cost).toLocaleString(undefined, {minimumFractionDigits: 2})}
                 </td>
                 <td><span style="background: #1e293b; color: var(--accent-color); padding: 4px 10px; border-radius: 6px; font-size: 11px;">${asset.status || 'Active'}</span></td>
             </tr>`;
@@ -273,7 +313,6 @@
         });
     }
 
-    // ฟังก์ชันช่องค้นหาอัจฉริยะ (Search Filter)
     function filterAssets() {
         const keyword = document.getElementById('searchBar').value.toLowerCase();
         const filtered = allAssetsData.filter(asset => 
@@ -284,7 +323,6 @@
         renderRegistryTable(filtered);
     }
 
-    // ส่งฟอร์มลงทะเบียนทรัพย์สินใหม่
     document.getElementById('assetForm').addEventListener('submit', async (e) => {
         e.preventDefault();
         const assetData = {
@@ -308,15 +346,15 @@
             if (response.ok) {
                 alert('🚀 บันทึกและอัปเดตเข้าฐานข้อมูลกลางสำเร็จ!');
                 document.getElementById('assetForm').reset();
-                loadAssets(); // ดึงข้อมูลชุดล่าสุดมาแสดงภาพรวมใหม่ทันที
-                switchTab('registry'); // ย้ายหน้าต่างกลับไปหน้าตารางทะเบียน
+                loadAssets(); 
+                switchTab('registry'); 
             } else {
                 const error = await response.json();
                 alert('เกิดข้อผิดพลาด: ' + (error.detail || 'ไม่สามารถบันทึกได้'));
             }
         } catch (error) {
             console.error('Submit error:', error);
-            alert('ไม่สามารถเชื่อมต่อระบบหลังบ้านได้');
+            alert('ไม่สามารถส่งข้อมูลได้เนื่องจากหมดเวลาเชื่อมต่อระบบหลังบ้าน');
         }
     });
 
