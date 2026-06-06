@@ -131,9 +131,14 @@
     const API_URL = 'https://tdl-asset-backend.onrender.com/api/assets'; 
 
     // 1. ดึงข้อมูลจาก Python API มาแสดงในตาราง
+   // 1. ดึงข้อมูลจาก Python API มาแสดงในตาราง
     async function loadAssets() {
         try {
-            const response = await fetch(API_URL);
+            // เติม / ปิดท้าย และใส่โหมด cors ให้เบราว์เซอร์มั่นใจ
+            const response = await fetch('https://tdl-asset-backend.onrender.com/api/assets/', {
+                method: 'GET',
+                mode: 'cors'
+            });
             const assets = await response.json();
             const tbody = document.getElementById('assetTableBody');
             tbody.innerHTML = '';
@@ -175,7 +180,8 @@
         };
 
         try {
-            const response = await fetch(API_URL, {
+            // เติม / ปิดท้ายที่ลิงก์ปลายทางตอน POST
+            const response = await fetch('https://tdl-asset-backend.onrender.com/api/assets/', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(assetData)
