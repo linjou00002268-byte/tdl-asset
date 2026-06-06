@@ -1,171 +1,292 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-    <link rel="icon" href="data:,">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TDL Asset Management System</title>
+    <link rel="icon" href="data:,">
     <style>
         :root {
-            --bg-color: #0f1117;
-            --card-bg: #1a1f2e;
-            --text-color: #e0e6f0;
-            --accent-color: #4a9eff;
-            --success-color: #00c851;
-            --border-color: #1e2d42;
+            --bg-color: #0b0f19;
+            --card-bg: #151d30;
+            --text-color: #e2e8f0;
+            --accent-color: #3b82f6;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --border-color: #24324f;
+            --sidebar-bg: #0f172a;
         }
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            padding: 20px;
-        }
-        h2 { margin-bottom: 20px; color: #fff; font-weight: 600; }
-        .container { max-width: 1200px; margin: 0 auto; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: var(--bg-color); color: var(--text-color); display: flex; min-height: 100vh; }
         
-        /* สไตล์ฟอร์มลงทะเบียน */
-        .form-box {
-            background: var(--card-bg);
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
-            padding: 20px;
-            margin-bottom: 30px;
-        }
-        .form-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-            margin-bottom: 15px;
-        }
-        .form-group label { display: block; font-size: 11px; color: #8ba3c4; margin-bottom: 5px; }
-        .form-group input, .form-group select {
-            width: 100%; padding: 8px 12px;
-            background: #0d1a2d; color: #fff;
-            border: 1px solid var(--border-color); border-radius: 6px;
-        }
-        .btn {
-            background: var(--accent-color); color: #fff; border: none;
-            padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: 600;
-        }
+        /* Sidebar Navigation */
+        .sidebar { width: 260px; background: var(--sidebar-bg); border-right: 1px solid var(--border-color); padding: 25px 20px; display: flex; flex-direction: column; gap: 30px; }
+        .logo-area { color: #fff; font-size: 18px; font-weight: 700; display: flex; align-items: center; gap: 10px; }
+        .nav-menu { display: flex; flex-direction: column; gap: 8px; list-style: none; }
+        .nav-item { padding: 12px 15px; color: #94a3b8; border-radius: 8px; cursor: pointer; font-weight: 500; transition: all 0.2s; display: flex; align-items: center; gap: 12px; }
+        .nav-item:hover, .nav-item.active { background: var(--card-bg); color: #fff; }
+        .nav-item.active { border-left: 4px solid var(--accent-color); }
+
+        /* Main Content Container */
+        .main-content { flex: 1; padding: 40px; overflow-y: auto; }
+        .page-header { margin-bottom: 30px; }
+        .page-title { font-size: 24px; color: #fff; margin-bottom: 5px; }
+        .page-subtitle { color: #64748b; font-size: 14px; }
+
+        /* KPI Cards (Dashboard) */
+        .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px; margin-bottom: 30px; }
+        .kpi-card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 14px; padding: 20px; display: flex; flex-direction: column; gap: 10px; }
+        .kpi-label { font-size: 13px; color: #94a3b8; }
+        .kpi-value { font-size: 24px; font-weight: 700; color: #fff; }
+        
+        /* Windows/Tabs Management */
+        .tab-window { display: none; }
+        .tab-window.active { display: block; animation: fadeIn 0.3s ease; }
+
+        /* Utility Elements */
+        .search-container { margin-bottom: 20px; display: flex; gap: 10px; }
+        .search-input { flex: 1; padding: 10px 15px; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 8px; color: #fff; }
+        
+        /* Table Styles */
+        .table-wrap { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; overflow: hidden; }
+        table { width: 100%; border-collapse: collapse; text-align: left; font-size: 14px; }
+        thead { background: #0f172a; color: #94a3b8; font-size: 12px; }
+        th, td { padding: 14px 20px; border-bottom: 1px solid var(--border-color); }
+        tbody tr:hover { background: #1e293b; }
+        .num-col { text-align: right; }
+
+        /* Form Styles */
+        .form-box { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 30px; max-width: 800px; }
+        .form-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; margin-bottom: 25px; }
+        @media (max-width: 600px) { .form-grid { grid-template-columns: 1fr; } }
+        .form-group label { display: block; font-size: 12px; color: #94a3b8; margin-bottom: 8px; }
+        .form-group input, .form-group select { width: 100%; padding: 10px 14px; background: #0f172a; color: #fff; border: 1px solid var(--border-color); border-radius: 8px; }
+        .btn { background: var(--accent-color); color: #fff; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-weight: 600; }
         .btn:hover { opacity: 0.9; }
 
-        /* สไตล์ตารางแสดงผล */
-        .table-wrap {
-            background: var(--card-bg); border: 1px solid var(--border-color);
-            border-radius: 12px; overflow: hidden;
-        }
-        table { width: 100%; border-collapse: collapse; text-align: left; }
-        thead { background: #0d1a2d; font-size: 11px; color: #8ba3c4; }
-        th, td { padding: 12px 15px; border-bottom: 1px solid var(--border-color); }
-        tbody tr:hover { background: #22293a; }
-        .num-col { text-align: right; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <h2>🏢 ระบบบริหารจัดการทรัพย์สิน (TDL Asset Registry)</h2>
+    <nav class="sidebar">
+        <div class="logo-area">🏢 TDL Asset Core</div>
+        <ul class="nav-menu">
+            <li class="nav-item active" onclick="switchTab('dashboard')">📊 Dashboard ภาพรวม</li>
+            <li class="nav-item" onclick="switchTab('registry')">📋 ทะเบียนทรัพย์สิน</li>
+            <li class="nav-item" onclick="switchTab('add-asset')">➕ ลงทะเบียนใหม่</li>
+            <li class="nav-item" onclick="switchTab('depreciation')">📉 บัญชีค่าเสื่อมราคา</li>
+        </ul>
+    </nav>
 
-    <div class="form-box">
-        <h3 style="margin-bottom: 15px; font-size: 14px; color: var(--accent-color);">➕ เพิ่มทรัพย์สินใหม่เข้าบัญชี</h3>
-        <form id="assetForm">
-            <div class="form-grid">
-                <div class="form-group">
-                    <label>รหัสทรัพย์สิน (Asset ID)</label>
-                    <input type="text" id="asset_id" required placeholder="เช่น TDL-FA-001">
-                </div>
-                <div class="form-group">
-                    <label>ชื่อรายการทรัพย์สิน</label>
-                    <input type="text" id="asset_name" required>
-                </div>
-                <div class="form-group">
-                    <label>หมวดหมู่</label>
-                    <select id="category_id">
-                        <option value="1">ยานพาหนะ/เครื่องจักรหนัก</option>
-                        <option value="2">อุปกรณ์ไอที</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>สถานที่ตั้ง/ผู้ถือครอง</label>
-                    <input type="text" id="location" required>
-                </div>
-                <div class="form-group">
-                    <label>วันที่ซื้อ</label>
-                    <input type="date" id="purchase_date" required>
-                </div>
-                <div class="form-group">
-                    <label>ราคาทุน (Cost)</label>
-                    <input type="number" id="purchase_cost" step="0.01" required>
-                </div>
-                <div class="form-group">
-                    <label>อายุใช้งาน (ปี)</label>
-                    <input type="number" id="useful_life" required>
-                </div>
+    <main class="main-content">
+        
+        <div id="dashboard" class="tab-window active">
+            <div class="page-header">
+                <h1 class="page-title">สรุปภาพรวมสินทรัพย์</h1>
+                <p class="page-subtitle">ข้อมูลการลงทุนและสถานะสินทรัพย์ถาวรของ TDL</p>
             </div>
-            <button type="submit" class="btn">💾 บันทึกทรัพย์สิน</button>
-        </form>
-    </div>
+            <div class="kpi-grid">
+                <div class="kpi-card"><span class="kpi-label">มูลค่าทุนรวม (Total Cost)</span><span class="kpi-value" id="kpi-total-cost">0.00</span></div>
+                <div class="kpi-card"><span class="kpi-label">จำนวนรายการทั้งหมด</span><span class="kpi-value" id="kpi-total-count">0</span></div>
+                <div class="kpi-card"><span class="kpi-label">อุปกรณ์ไอที (ชิ้น)</span><span class="kpi-value" id="kpi-it-count">0</span></div>
+                <div class="kpi-card"><span class="kpi-label">เครื่องจักร & ยานพาหนะ</span><span class="kpi-value" id="kpi-machinery-count">0</span></div>
+            </div>
+        </div>
 
-    <h3>📋 ทะเบียนทรัพย์สินถาวรปัจจุบัน</h3>
-    <div class="table-wrap" style="margin-top: 10px;">
-        <table>
-            <thead>
-                <tr>
-                    <th>รหัสทรัพย์สิน</th>
-                    <th>ชื่อทรัพย์สิน</th>
-                    <th>หมวดหมู่</th>
-                    <th>สถานที่ตั้ง</th>
-                    <th>วันที่ซื้อ</th>
-                    <th class="num-col">ราคาทุน</th>
-                    <th>สถานะ</th>
-                </tr>
-            </thead>
-            <tbody id="assetTableBody">
-            </tbody>
-        </table>
-    </div>
-</div>
+        <div id="registry" class="tab-window">
+            <div class="page-header">
+                <h1 class="page-title">ทะเบียนทรัพย์สินถาวร</h1>
+                <p class="page-subtitle">ตรวจสอบ ค้นหา และติดตามสถานที่จัดวางทรัพย์สิน</p>
+            </div>
+            <div class="search-container">
+                <input type="text" id="searchBar" class="search-input" placeholder="🔍 ค้นหาด้วยรหัสทรัพย์สิน ชื่อ หรือสถานที่ตั้ง..." onkeyup="filterAssets()">
+            </div>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>รหัสทรัพย์สิน</th>
+                            <th>ชื่อทรัพย์สิน</th>
+                            <th>หมวดหมู่</th>
+                            <th>สถานที่ตั้ง</th>
+                            <th>วันที่ซื้อ</th>
+                            <th class="num-col">ราคาทุน</th>
+                            <th>สถานะ</th>
+                        </tr>
+                    </thead>
+                    <tbody id="assetTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="add-asset" class="tab-window">
+            <div class="page-header">
+                <h1 class="page-title">เพิ่มทรัพย์สินใหม่เข้าบัญชี</h1>
+                <p class="page-subtitle">กรอกรายละเอียดเพื่อสร้างรหัสทรัพย์สินถาวรและบันทึกลงฐานข้อมูลกลาง</p>
+            </div>
+            <div class="form-box">
+                <form id="assetForm">
+                    <div class="form-grid">
+                        <div class="form-group"><label>รหัสทรัพย์สิน (Asset ID)</label><input type="text" id="asset_id" required placeholder="เช่น TDL-FA-001"></div>
+                        <div class="form-group"><label>ชื่อรายการทรัพย์สิน</label><input type="text" id="asset_name" required></div>
+                        <div class="form-group">
+                            <label>หมวดหมู่</label>
+                            <select id="category_id">
+                                <option value="1">ยานพาหนะ/เครื่องจักรหนัก</option>
+                                <option value="2">อุปกรณ์ไอที</option>
+                            </select>
+                        </div>
+                        <div class="form-group"><label>สถานที่ตั้ง/ผู้ถือครอง</label><input type="text" id="location" required placeholder="เช่น สำนักงาน, โซโปน"></div>
+                        <div class="form-group"><label>วันที่ซื้อ</label><input type="date" id="purchase_date" required></div>
+                        <div class="form-group"><label>ราคาทุน (Cost)</label><input type="number" id="purchase_cost" step="0.01" required></div>
+                        <div class="form-group"><label>อายุการใช้งาน (ปี)</label><input type="number" id="useful_life" required></div>
+                    </div>
+                    <button type="submit" class="btn">💾 บันทึกและซิงค์ข้อมูล</button>
+                </form>
+            </div>
+        </div>
+
+        <div id="depreciation" class="tab-window">
+            <div class="page-header">
+                <h1 class="page-title">ตารางคำนวณค่าเสื่อมราคา (Straight-Line)</h1>
+                <p class="page-subtitle">แสดงการตัดมูลค่าสินทรัพย์ถาวรรายปีตามหลักการบัญชี</p>
+            </div>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>รหัสทรัพย์สิน</th>
+                            <th>ชื่อทรัพย์สิน</th>
+                            <th class="num-col">ราคาทุน</th>
+                            <th class="num-col">อายุ (ปี)</th>
+                            <th class="num-col">ค่าเสื่อม/ปี</th>
+                            <th class="num-col">ค่าเสื่อมสะสม ณ ปัจจุบัน</th>
+                            <th class="num-col">มูลค่าสุทธิปัจจุบัน (Book Value)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="depreciationTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+    </main>
 
 <script>
     const API_URL = 'https://tdl-asset-backend.onrender.com/api/assets/'; 
+    let allAssetsData = []; // เก็บข้อมูลดิบไว้ทำซิงค์ค้นหาภาพรวม
 
-    // 1. ดึงข้อมูลจาก Python API มาแสดงในตาราง (แก้ไขจุดซ้ำซ้อนเรียบร้อย)
+    // ฟังก์ชันสลับหน้าต่างแท็บเมนู
+    function switchTab(tabId) {
+        document.querySelectorAll('.tab-window').forEach(win => win.classList.remove('active'));
+        document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+        
+        document.getElementById(tabId).classList.add('active');
+        event.currentTarget.classList.add('active');
+    }
+
+    // คำนวณตารางคุมค่าเสื่อมสะสม (Fixed Asset Logic)
+    function calculateDepreciation(assets) {
+        const depTbody = document.getElementById('depreciationTableBody');
+        depTbody.innerHTML = '';
+        const today = new Date();
+
+        assets.forEach(asset => {
+            const cost = parseFloat(asset.purchase_cost);
+            const life = parseInt(asset.useful_life);
+            const purchaseDate = new Date(asset.purchase_date);
+            
+            // คำนวณค่าเสื่อมต่อปี (ราคาทุน / อายุการใช้งาน)
+            const depPerYear = cost / life;
+            
+            // คำนวณระยะเวลาที่ถือครองมาจริงจนถึงปีปัจจุบัน
+            const yearsInUse = Math.max(0, (today - purchaseDate) / (1000 * 60 * 60 * 24 * 365.25));
+            
+            // ค่าเสื่อมสะสมต้องไม่เกินราคาทุนสินทรัพย์
+            const accumulatedDep = Math.min(cost, depPerYear * yearsInUse);
+            const bookValue = cost - accumulatedDep;
+
+            const row = `<tr>
+                <td style="font-family: monospace;">${asset.asset_id}</td>
+                <td style="font-weight:600;">${asset.asset_name}</td>
+                <td class="num-col">${cost.toLocaleString(undefined, {minimumFractionDigits:2})}</td>
+                <td class="num-col">${life} ปี</td>
+                <td class="num-col" style="color:#ef4444;">${depPerYear.toLocaleString(undefined, {minimumFractionDigits:2})}</td>
+                <td class="num-col" style="color:#f59e0b;">${accumulatedDep.toLocaleString(undefined, {minimumFractionDigits:2})}</td>
+                <td class="num-col" style="color:#10b981; font-weight:700;">${bookValue.toLocaleString(undefined, {minimumFractionDigits:2})}</td>
+            </tr>`;
+            depTbody.innerHTML += row;
+        });
+    }
+
+    // อัปเดตข้อมูลกล่องการ์ดสรุปบน Dashboard
+    function updateDashboard(assets) {
+        let totalCost = 0;
+        let itCount = 0;
+        let machineryCount = 0;
+
+        assets.forEach(asset => {
+            totalCost += parseFloat(asset.purchase_cost);
+            if (asset.category_id === 2) itCount++;
+            if (asset.category_id === 1) machineryCount++;
+        });
+
+        document.getElementById('kpi-total-cost').innerText = totalCost.toLocaleString(undefined, {minimumFractionDigits:2}) + ' LAK';
+        document.getElementById('kpi-total-count').innerText = assets.length;
+        document.getElementById('kpi-it-count').innerText = itCount;
+        document.getElementById('kpi-machinery-count').innerText = machineryCount;
+    }
+
+    // โหลดข้อมูลเข้าสู่ระบบ
     async function loadAssets() {
         try {
-            const response = await fetch(API_URL, {
-                method: 'GET',
-                mode: 'cors'
-            });
+            const response = await fetch(API_URL, { method: 'GET', mode: 'cors' });
             const assets = await response.json();
-            const tbody = document.getElementById('assetTableBody');
-            tbody.innerHTML = '';
-
-            if (Array.isArray(assets)) {
-                assets.forEach(asset => {
-                    const row = `<tr>
-                        <td style="font-family: monospace; color: #8ba3c4;">${asset.asset_id}</td>
-                        <td style="font-weight: 600;">${asset.asset_name}</td>
-                        <td>${asset.category_name || 'ทั่วไป'}</td>
-                        <td>📍 ${asset.location}</td>
-                        <td>${new Date(asset.purchase_date).toLocaleDateString('th-TH')}</td>
-                        <td class="num-col" style="color: var(--success-color); font-weight: 700;">
-                            ${parseFloat(asset.purchase_cost).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}
-                        </td>
-                        <td><span style="background: #002040; color: var(--accent-color); padding: 3px 8px; border-radius: 4px; font-size: 11px;">${asset.status || 'Active'}</span></td>
-                    </tr>`;
-                    tbody.innerHTML += row;
-                });
-            }
+            allAssetsData = Array.isArray(assets) ? assets : [];
+            
+            // สั่งอัปเดตกระจายไปยังหน้าต่างต่าง ๆ
+            renderRegistryTable(allAssetsData);
+            updateDashboard(allAssetsData);
+            calculateDepreciation(allAssetsData);
         } catch (error) {
             console.error('Error loading assets:', error);
         }
     }
 
-    // 2. ส่งข้อมูลฟอร์มไปบันทึกผ่าน API
+    // วาดตารางหน้าทะเบียน
+    function renderRegistryTable(assets) {
+        const tbody = document.getElementById('assetTableBody');
+        tbody.innerHTML = '';
+        assets.forEach(asset => {
+            const row = `<tr>
+                <td style="font-family: monospace; color: #8ba3c4;">${asset.asset_id}</td>
+                <td style="font-weight: 600;">${asset.asset_name}</td>
+                <td>${asset.category_name || 'ทั่วไป'}</td>
+                <td>📍 ${asset.location}</td>
+                <td>${new Date(asset.purchase_date).toLocaleDateString('th-TH')}</td>
+                <td class="num-col" style="color: var(--success-color); font-weight: 700;">
+                    ${parseFloat(asset.purchase_cost).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                </td>
+                <td><span style="background: #1e293b; color: var(--accent-color); padding: 4px 10px; border-radius: 6px; font-size: 11px;">${asset.status || 'Active'}</span></td>
+            </tr>`;
+            tbody.innerHTML += row;
+        });
+    }
+
+    // ฟังก์ชันช่องค้นหาอัจฉริยะ (Search Filter)
+    function filterAssets() {
+        const keyword = document.getElementById('searchBar').value.toLowerCase();
+        const filtered = allAssetsData.filter(asset => 
+            asset.asset_id.toLowerCase().includes(keyword) ||
+            asset.asset_name.toLowerCase().includes(keyword) ||
+            asset.location.toLowerCase().includes(keyword)
+        );
+        renderRegistryTable(filtered);
+    }
+
+    // ส่งฟอร์มลงทะเบียนทรัพย์สินใหม่
     document.getElementById('assetForm').addEventListener('submit', async (e) => {
         e.preventDefault();
-        
         const assetData = {
             asset_id: document.getElementById('asset_id').value,
             asset_name: document.getElementById('asset_name').value,
@@ -185,20 +306,20 @@
             });
 
             if (response.ok) {
-                alert('บันทึกทรัพย์สินสำเร็จ!');
+                alert('🚀 บันทึกและอัปเดตเข้าฐานข้อมูลกลางสำเร็จ!');
                 document.getElementById('assetForm').reset();
-                loadAssets(); // โหลดตารางใหม่
+                loadAssets(); // ดึงข้อมูลชุดล่าสุดมาแสดงภาพรวมใหม่ทันที
+                switchTab('registry'); // ย้ายหน้าต่างกลับไปหน้าตารางทะเบียน
             } else {
                 const error = await response.json();
                 alert('เกิดข้อผิดพลาด: ' + (error.detail || 'ไม่สามารถบันทึกได้'));
             }
         } catch (error) {
             console.error('Submit error:', error);
-            alert('ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้');
+            alert('ไม่สามารถเชื่อมต่อระบบหลังบ้านได้');
         }
     });
 
-    // โหลดข้อมูลครั้งแรกเมื่อเปิดหน้าเว็บ
     window.addEventListener('DOMContentLoaded', loadAssets);
 </script>
 </body>
